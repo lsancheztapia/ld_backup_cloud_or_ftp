@@ -18,8 +18,8 @@ $backup_folders = array(
   )
 );
 
-$username='jeffetek';
-$api_key="4dca9675e90c820f9393445faa649ebf";
+$username='the_username';
+$api_key="the_api_key";
 
 $cloud_folder = 'etek_backups';
 $temp_local_folder = '/root/work/incrementals';
