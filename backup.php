@@ -26,7 +26,7 @@ $api_key="4dca9675e90c820f9393445faa649ebf";
 */
 
 // deletings previuos backups
-print shell_exec( 'rm -rf /root/work/incrementals/*.tgz' );
+print shell_exec( 'rm -rf ' . $temp_local_folder . '/*.tgz' );
 
 // access to cloud files
 $auth = new CF_Authentication($username, $api_key);
