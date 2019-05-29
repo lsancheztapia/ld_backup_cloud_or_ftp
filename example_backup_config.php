@@ -47,6 +47,7 @@ $backup_type = 'ftp';
 $backup_type_ftp_user = 'the_user';
 $backup_type_ftp_password = 'the_pass';
 $backup_type_ftp_host = 'the_host';
+$backup_type_ftp_folder = 'folder-in-user-homedir-to store';
 
 
 $temp_local_folder = '/home/backup_stuff/work/incrementals';

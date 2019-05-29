@@ -9,6 +9,7 @@ require( 'backup_config.php' );
 // checking the $temp_local_folder
 if ( ! file_exists($temp_local_folder) ) { shell_exec( 'mkdir -p ' . $temp_local_folder ); }
 
+
 $today = date("Y") . '-week' . date("W-Ymd-His");
 
 // deletings previuos backups
@@ -37,24 +38,30 @@ foreach ( $backup_folders as $backup ) {
 
     if ( $login ) {
   
-      if ( ! ftp_chdir($ftp_conn, 'files/' . $backup['machine_name']) ) {
-        ftp_mkdir( $ftp_conn, 'files/' . $backup['machine_name'] );
-        ftp_chdir( $ftp_conn, 'files/' . $backup['machine_name'] );
+      if ( ! ftp_chdir( $ftp_conn, $backup_type_ftp_folder ) ) {
+        ftp_mkdir( $ftp_conn, $backup_type_ftp_folder );
+      }
+      ftp_chdir($ftp_conn, '~');
+
+      if ( ! ftp_chdir($ftp_conn, $backup_type_ftp_folder . '/' . $backup['machine_name']) ) {
+        ftp_mkdir( $ftp_conn, $backup_type_ftp_folder . '/' . $backup['machine_name'] );
+        ftp_chdir( $ftp_conn, $backup_type_ftp_folder . '/' . $backup['machine_name'] );
       }
 
       if ( ftp_put($ftp_conn, $incremental_file_name, $incremental_file, FTP_BINARY) ) {
         echo "Successfully uploaded $incremental_file.";
       } else {
-        echo "Error uploading $incremental_file.";
+        echo "\nError uploading $incremental_file.";
       }
 
     } else {
-      die("Could not login to $backup_type_ftp_host");
+      die("\nCould not login to $backup_type_ftp_host");
     }
 
     ftp_close( $ftp_conn );
 
   }
+  // missing backup by cloud, code from blackup.php should be moved here ...
 }
 
 
@@ -63,20 +70,33 @@ foreach ( $mysql_backup_databases as $backup ) {
   $today = date("Y") . '-week' . date("W-Ymd-His");
   $db_base_file_name = $backup['machine_name'] . '_' . $today;
   $db_file = $temp_local_folder . '/' . $db_base_file_name . '.sql';
-  $cmd = "mysqldump -u$mysql_database_user " . $backup['database_name'] . " > $db_file";
-  shell_exec( $cmd );
+  $cmd = "mysqldump -u$mysql_database_user " . $backup['database_name'] . " -p$mysql_database_password > $db_file";
+  passthru( $cmd , $output );
+  if( $output != 0 ) {
+    echo "\nError during backup";
+    die();
+  } else {
+    echo "\nDatabase " . $backup['database_name'] . " saved";
+  }
+  //shell_exec( $cmd );
   $cmd = "tar cvfz " . $temp_local_folder . '/' . $db_base_file_name . ".tgz " . $temp_local_folder . '/' . $db_base_file_name . ".sql ; rm " . $temp_local_folder . '/' . $db_base_file_name . ".sql";
   shell_exec( $cmd );
 
   // send to a storage place
   if ( $backup_type == 'ftp' ) {
-    $ftp_conn = ftp_connect($backup_type_ftp_host) or die("Could not connect to $backup_type_ftp_host");
+    $ftp_conn = ftp_connect( $backup_type_ftp_host ) or die("Could not connect to $backup_type_ftp_host");
     $login = ftp_login($ftp_conn, $backup_type_ftp_user, $backup_type_ftp_password);
 
     if ( $login ) {
-      if ( ! ftp_chdir($ftp_conn, 'databases/' . $backup['machine_name']) ) {
-        ftp_mkdir( $ftp_conn, 'databases/' . $backup['machine_name'] );
-        ftp_chdir( $ftp_conn, 'databases/' . $backup['machine_name'] );
+
+      if ( ! ftp_chdir( $ftp_conn, $backup_type_ftp_folder . '/databases/' ) ) {
+        ftp_mkdir( $ftp_conn, $backup_type_ftp_folder . '/databases/' );
+      }
+      ftp_chdir($ftp_conn, '~');
+
+      if ( ! ftp_chdir($ftp_conn, $backup_type_ftp_folder . '/databases/' . $backup['machine_name']) ) {
+        ftp_mkdir( $ftp_conn, $backup_type_ftp_folder . '/databases/' . $backup['machine_name'] );
+        ftp_chdir( $ftp_conn, $backup_type_ftp_folder . '/databases/' . $backup['machine_name'] );
       }
       if ( ftp_put( $ftp_conn, $db_base_file_name . '.tgz', $temp_local_folder . '/' . $db_base_file_name . '.tgz', FTP_BINARY) ) {
         echo "Successfully uploaded " . $temp_local_folder . '/' . $db_base_file_name . '.tgz';
@@ -90,4 +110,7 @@ foreach ( $mysql_backup_databases as $backup ) {
     ftp_close( $ftp_conn );
 
   }
+  // missing backup by cloud, code from blackup.php should be moved here ...
 }
+
+echo "\n";
