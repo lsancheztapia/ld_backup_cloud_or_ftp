@@ -6,6 +6,9 @@
 
 require( 'backup_config.php' );
 
+// checking the $temp_local_folder
+if ( ! file_exists($temp_local_folder) ) { shell_exec( 'mkdir -p ' . $temp_local_folder ); }
+
 $today = date("Y") . '-week' . date("W-Ymd-His");
 
 // deletings previuos backups
